@@ -4,11 +4,11 @@ import Layout from './components/layout/Layout';
 import HomePage from './components/home/HomePage';
 import DuenosPage from './components/duenos/DuenosPage';
 import MascotasPage from './components/mascotas/MascotasPage';
-// import CitasPage from './components/citas/CitasPage'; // Lo creamos mañana
+import CitasPage from './components/citas/CitasPage';
 
 /**
  * Componente principal de la aplicación.
- * Define las rutas del sistema usando React Router.
+ * Define todas las rutas del sistema usando React Router.
  */
 function App() {
     return (
@@ -18,7 +18,7 @@ function App() {
                     <Route index element={<HomePage />} />
                     <Route path="duenos" element={<DuenosPage />} />
                     <Route path="mascotas" element={<MascotasPage />} />
-                    {/* <Route path="citas" element={<CitasPage />} /> */}
+                    <Route path="citas" element={<CitasPage />} />
                 </Route>
             </Routes>
         </BrowserRouter>
