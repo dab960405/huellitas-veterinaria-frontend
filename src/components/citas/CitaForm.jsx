@@ -7,8 +7,10 @@ import { mascotaService } from '../../services/api';
  * Formulario para crear y editar citas veterinarias.
  * Carga dinámicamente la lista de mascotas para el select.
  * Valida que no se seleccionen fechas pasadas.
+ * Impide marcar como COMPLETADA una cita futura.
  */
 function CitaForm({ citaEdit, onSave, onCancel }) {
+
     const [formData, setFormData] = useState({
         fecha: '',
         hora: '',
@@ -16,6 +18,7 @@ function CitaForm({ citaEdit, onSave, onCancel }) {
         estado: 'PROGRAMADA',
         idMascota: ''
     });
+
     const [mascotas, setMascotas] = useState([]);
 
     /** Carga la lista de mascotas al montar el componente */
@@ -46,37 +49,61 @@ function CitaForm({ citaEdit, onSave, onCancel }) {
         }
     };
 
-    /** Maneja los cambios en los inputs del formulario */
+    /** Maneja cambios en inputs */
     const handleChange = (e) => {
         const { name, value } = e.target;
+
         setFormData(prev => ({
             ...prev,
             [name]: value
         }));
     };
 
-    /** Maneja el envío del formulario con validaciones */
+    /**
+     * 🚨 ENVÍO CON VALIDACIONES COMPLETAS
+     */
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Validación: campos obligatorios
-        if (!formData.fecha || !formData.hora ||
-            !formData.motivo.trim() || !formData.idMascota) {
+        // ==============================
+        // Validación campos obligatorios
+        // ==============================
+        if (!formData.fecha ||
+            !formData.hora ||
+            !formData.motivo.trim() ||
+            !formData.idMascota) {
             alert('Por favor complete todos los campos obligatorios');
             return;
         }
 
-        // Validación: no permitir fechas pasadas
-        const fechaSeleccionada = new Date(formData.fecha + 'T00:00:00');
+        const fechaHoraSeleccionada = new Date(`${formData.fecha}T${formData.hora}`);
+        const ahora = new Date();
+
+        // ==============================
+        // Validación fechas pasadas
+        // ==============================
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
 
-        if (fechaSeleccionada < hoy) {
+        const fechaSolo = new Date(formData.fecha + 'T00:00:00');
+
+        if (fechaSolo < hoy) {
             alert('No se permiten citas en fechas pasadas');
             return;
         }
 
-        // Preparar datos para enviar
+        // ==============================
+        // 🚫 No permitir COMPLETAR citas futuras
+        // ==============================
+        if (formData.estado === 'COMPLETADA' &&
+            fechaHoraSeleccionada > ahora) {
+            alert('No se puede marcar como COMPLETADA una cita que aún no ha ocurrido');
+            return;
+        }
+
+        // ==============================
+        // Enviar datos
+        // ==============================
         const dataToSend = {
             ...formData,
             idMascota: parseInt(formData.idMascota)
@@ -97,16 +124,13 @@ function CitaForm({ citaEdit, onSave, onCancel }) {
         });
     };
 
-    /** Cancela la edición */
+    /** Cancela edición */
     const handleCancel = () => {
         resetForm();
         onCancel();
     };
 
-    /**
-     * Calcula la fecha mínima permitida (hoy).
-     * Esto previene seleccionar fechas pasadas desde el input date.
-     */
+    /** Fecha mínima = hoy */
     const getTodayDate = () => {
         const today = new Date();
         const year = today.getFullYear();
@@ -115,14 +139,32 @@ function CitaForm({ citaEdit, onSave, onCancel }) {
         return `${year}-${month}-${day}`;
     };
 
+    /**
+     * Determina si la cita aún no ha ocurrido
+     * (para deshabilitar COMPLETADA)
+     */
+    const esCitaFutura = () => {
+        if (!formData.fecha || !formData.hora) return true;
+        return new Date(`${formData.fecha}T${formData.hora}`) > new Date();
+    };
+
     return (
         <div className="form-container">
-            <h3>{citaEdit ? '✏️ Editar Cita' : '➕ Agendar Nueva Cita'}</h3>
+
+            <h3>
+                {citaEdit ? '✏️ Editar Cita' : '➕ Agendar Nueva Cita'}
+            </h3>
 
             <form onSubmit={handleSubmit}>
+
                 <div className="form-grid">
+
+                    {/* Mascota */}
                     <div className="form-group">
-                        <label>Mascota (Paciente) <span className="required">*</span></label>
+                        <label>
+                            Mascota (Paciente) <span className="required">*</span>
+                        </label>
+
                         <select
                             name="idMascota"
                             value={formData.idMascota}
@@ -130,16 +172,26 @@ function CitaForm({ citaEdit, onSave, onCancel }) {
                             required
                         >
                             <option value="">Seleccione una mascota...</option>
+
                             {mascotas.map(mascota => (
-                                <option key={mascota.idMascota} value={mascota.idMascota}>
-                                    {mascota.nombre} ({mascota.especie} - {mascota.raza}) - Dueño: {mascota.nombreDueno}
+                                <option
+                                    key={mascota.idMascota}
+                                    value={mascota.idMascota}
+                                >
+                                    {mascota.nombre}
+                                    {' '}({mascota.especie} - {mascota.raza})
+                                    {' '} - Dueño: {mascota.nombreDueno}
                                 </option>
                             ))}
                         </select>
                     </div>
 
+                    {/* Fecha */}
                     <div className="form-group">
-                        <label>Fecha <span className="required">*</span></label>
+                        <label>
+                            Fecha <span className="required">*</span>
+                        </label>
+
                         <input
                             type="date"
                             name="fecha"
@@ -150,8 +202,12 @@ function CitaForm({ citaEdit, onSave, onCancel }) {
                         />
                     </div>
 
+                    {/* Hora */}
                     <div className="form-group">
-                        <label>Hora <span className="required">*</span></label>
+                        <label>
+                            Hora <span className="required">*</span>
+                        </label>
+
                         <input
                             type="time"
                             name="hora"
@@ -161,44 +217,81 @@ function CitaForm({ citaEdit, onSave, onCancel }) {
                         />
                     </div>
 
+                    {/* Estado (solo edición) */}
                     {citaEdit && (
                         <div className="form-group">
                             <label>Estado</label>
+
                             <select
                                 name="estado"
                                 value={formData.estado}
                                 onChange={handleChange}
                             >
-                                <option value="PROGRAMADA">Programada</option>
-                                <option value="COMPLETADA">Completada</option>
-                                <option value="CANCELADA">Cancelada</option>
+                                <option value="PROGRAMADA">
+                                    Programada
+                                </option>
+
+                                <option
+                                    value="COMPLETADA"
+                                    disabled={esCitaFutura()}
+                                >
+                                    Completada
+                                </option>
+
+                                <option value="CANCELADA">
+                                    Cancelada
+                                </option>
                             </select>
                         </div>
                     )}
 
-                    <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                        <label>Motivo de la cita <span className="required">*</span></label>
+                    {/* Motivo */}
+                    <div
+                        className="form-group"
+                        style={{ gridColumn: '1 / -1' }}
+                    >
+                        <label>
+                            Motivo de la cita <span className="required">*</span>
+                        </label>
+
                         <textarea
                             name="motivo"
                             value={formData.motivo}
                             onChange={handleChange}
-                            placeholder="Ej: Vacunación anual, control general, desparasitación..."
+                            placeholder="Ej: Vacunación anual, control general..."
                             rows="3"
                             required
-                        ></textarea>
+                        />
                     </div>
+
                 </div>
 
+                {/* Botones */}
                 <div className="form-buttons">
-                    <button type="submit" className="btn btn-success">
-                        <FaSave /> {citaEdit ? 'Actualizar' : 'Agendar Cita'}
+
+                    <button
+                        type="submit"
+                        className="btn btn-success"
+                    >
+                        <FaSave />
+                        {' '}
+                        {citaEdit ? 'Actualizar' : 'Agendar Cita'}
                     </button>
+
                     {citaEdit && (
-                        <button type="button" className="btn btn-secondary" onClick={handleCancel}>
-                            <FaTimes /> Cancelar
+                        <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={handleCancel}
+                        >
+                            <FaTimes />
+                            {' '}
+                            Cancelar
                         </button>
                     )}
+
                 </div>
+
             </form>
         </div>
     );
