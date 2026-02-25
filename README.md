@@ -1,154 +1,293 @@
 # 🐾 Clínica Veterinaria Huellitas — Frontend
 
-Sistema web de gestión veterinaria para administrar **dueños**, **mascotas** y **citas médicas**.
-
-> **Stack:** React 19 · Vite · React Router · Axios
+Interfaz web desarrollada con **React + Vite** como parte del Test Práctico de Certificación del programa Técnico Laboral en Desarrollo de Software (CESDE / AHK Colombia).
 
 ---
 
-## ⚠️ Requisito previo — Node.js
+## 🗂️ Tabla de contenidos
 
-Solo necesitas tener **Node.js v20 o superior** instalado.
-
-### ¿Cómo verificarlo?
-
-Abre una terminal y escribe:
-```
-node --version
-```
-
-| Resultado | Qué hacer |
-|-----------|-----------|
-| `v20.x.x` o mayor ✅ | Listo, continúa al siguiente paso |
-| `v18.x.x` o menor ⚠️ | Necesitas actualizar Node.js |
-| Comando no encontrado ❌ | Necesitas instalar Node.js |
-
-**Descarga Node.js aquí → https://nodejs.org** (botón verde que dice **LTS**)  
-Instala con todas las opciones por defecto y reinicia la terminal.
+- [Descripción](#descripción)
+- [Tecnologías utilizadas](#tecnologías-utilizadas)
+- [Arquitectura del proyecto](#arquitectura-del-proyecto)
+- [Estructura de carpetas](#estructura-de-carpetas)
+- [Requisitos previos](#requisitos-previos)
+- [Instalación y ejecución](#instalación-y-ejecución)
+- [Módulos de la aplicación](#módulos-de-la-aplicación)
+- [Validaciones implementadas](#validaciones-implementadas)
+- [Diseño responsive y accesibilidad](#diseño-responsive-y-accesibilidad)
+- [Conexión con el backend](#conexión-con-el-backend)
 
 ---
 
-## 📦 Paso 1 — Obtener el proyecto
+## Descripción
 
-### Si lo descargaste como ZIP:
+El frontend de Huellitas es una **Single Page Application (SPA)** que consume la API REST del backend (Spring Boot en el puerto 8080) para gestionar la información clínica de la veterinaria. Permite administrar dueños, mascotas y citas desde una interfaz web moderna, intuitiva y adaptable a cualquier dispositivo.
 
-1. Localiza el archivo `.zip` descargado
-2. **Clic derecho → Extraer todo** (Windows) o doble clic (Mac)  
-   ⚠️ No ejecutes nada desde dentro del ZIP sin extraer primero
-3. Abre la carpeta extraída — verás estos archivos dentro:
+---
+
+## Tecnologías utilizadas
+
+| Tecnología | Versión | Uso |
+|---|---|---|
+| React | 19 | Librería principal de UI con hooks |
+| Vite | 7 | Bundler y servidor de desarrollo |
+| React Router DOM | 7 | Enrutamiento entre páginas (SPA) |
+| Axios | 1.13 | Cliente HTTP para consumir la API REST |
+| React Icons | 5.5 | Iconografía (FaSave, FaEdit, FaTrash...) |
+| CSS personalizado | — | Estilos propios con variables CSS |
+
+---
+
+## Arquitectura del proyecto
+
+El frontend sigue el patrón **"Presentational & Container Components"**, separando la lógica de negocio de la presentación:
 
 ```
-📁 carpeta-del-proyecto/
-   ├── start.bat        ← para Windows
-   ├── start.sh         ← para Mac / Linux
-   ├── README.md
-   ├── package.json
-   ├── vite.config.js
-   ├── index.html
-   └── src/
+App.jsx (BrowserRouter + Rutas)
+     │
+     ▼
+Layout (Header + Outlet + Footer)
+     │
+     ├── HomePage        ← Tarjetas de acceso rápido
+     ├── DuenosPage      ← Lógica de estado del módulo
+     │     ├── DuenoForm ← Formulario (recibe props)
+     │     └── DuenoList ← Tabla (recibe props)
+     ├── MascotasPage
+     │     ├── MascotaForm
+     │     └── MascotaList
+     └── CitasPage
+           ├── CitaForm
+           └── CitaList
+
+services/api.js  ← Capa de comunicación con el backend (Axios)
+styles/global.css ← Estilos centralizados con variables CSS
 ```
 
-### Si lo clonaste desde GitHub:
+**Flujo de datos:**
 
+```
+Usuario interactúa
+      │
+      ▼
+Componente Form (estado local con useState)
+      │ onSave(formData)
+      ▼
+Page Component (lógica + estado global del módulo)
+      │ await service.create(data)
+      ▼
+services/api.js (Axios → HTTP Request)
+      │
+      ▼
+Backend Spring Boot (puerto 8080)
+      │ JSON Response
+      ▼
+Page actualiza estado → Re-render automático
+```
+
+---
+
+## Estructura de carpetas
+
+```
+frontend/
+├── public/
+│   └── vite.svg
+├── src/
+│   ├── components/
+│   │   ├── citas/
+│   │   │   ├── CitaForm.jsx        # Formulario agendar/editar citas
+│   │   │   ├── CitaList.jsx        # Tabla de citas con badge de estado
+│   │   │   └── CitasPage.jsx       # Página principal del módulo
+│   │   ├── duenos/
+│   │   │   ├── DuenoForm.jsx       # Formulario crear/editar dueños
+│   │   │   ├── DuenoList.jsx       # Tabla de dueños
+│   │   │   └── DuenosPage.jsx      # Página principal del módulo
+│   │   ├── home/
+│   │   │   └── HomePage.jsx        # Dashboard con tarjetas de acceso
+│   │   └── layout/
+│   │       ├── Footer.jsx          # Pie de página
+│   │       ├── Header.jsx          # Navegación con menú hamburguesa
+│   │       └── Layout.jsx          # Wrapper con Outlet de React Router
+│   ├── services/
+│   │   └── api.js                  # Capa Axios: duenoService, mascotaService, citaService
+│   ├── styles/
+│   │   └── global.css              # Estilos globales con variables CSS
+│   ├── App.jsx                     # Enrutador raíz (BrowserRouter + Routes)
+│   └── main.jsx                    # Punto de entrada (ReactDOM.createRoot)
+├── index.html                      # HTML base (div#root)
+├── vite.config.js                  # Configuración Vite (puerto 5173, open: true)
+├── package.json
+├── start.bat                       # Script arranque automático Windows
+└── start.sh                        # Script arranque automático Mac/Linux
+```
+
+---
+
+## Requisitos previos
+
+- **Node.js v20 o superior**
+
+Verificar:
 ```bash
-git clone <url-del-repositorio>
-cd <nombre-del-repositorio>
+node --version   # debe mostrar v20.x.x o mayor
 ```
 
----
-
-## 🚀 Paso 2 — Levantar el proyecto
-
-### En Windows — doble clic en `start.bat`
-
-1. Dentro de la carpeta del proyecto, haz **doble clic** en `start.bat`
-2. Si Windows muestra una advertencia azul, haz clic en **"Más información"** → **"Ejecutar de todas formas"**
-3. Se abre una ventana negra (consola) — espera mientras instala las dependencias
-4. El navegador se abre solo en **http://localhost:5173** ✅
+Si no está instalado o la versión es antigua, descargarlo desde **https://nodejs.org** (botón verde **LTS**).
 
 ---
 
-### En Mac — clic derecho en `start.sh`
+## Instalación y ejecución
 
-1. Dentro de la carpeta del proyecto, haz **clic derecho** sobre `start.sh`
-2. Selecciona **"Abrir con" → "Terminal"**
-3. Espera mientras instala las dependencias
-4. El navegador se abre solo en **http://localhost:5173** ✅
+> ⚠️ El backend Spring Boot debe estar corriendo **antes** de usar la aplicación.
+> Ver instrucciones en `CodigoFuente/Backend/README.md`.
 
-> Si Mac dice que no puede abrir el archivo, abre Terminal manualmente,
-> navega hasta la carpeta del proyecto y ejecuta:
-> ```bash
-> chmod +x start.sh && ./start.sh
-> ```
+### Opción A — Scripts automáticos (recomendado)
 
----
+**Windows:** doble clic en `start.bat`
 
-### En Linux — terminal en la carpeta del proyecto
+Los scripts verifican automáticamente la versión de Node, instalan las dependencias y abren el navegador en `http://localhost:5173`.
 
+**Mac:** clic derecho sobre `start.sh` → "Abrir con Terminal"
+
+**Linux:**
 ```bash
 chmod +x start.sh && ./start.sh
 ```
 
-El navegador se abre solo en **http://localhost:5173** ✅
-
----
-
-### Alternativa manual (cualquier sistema)
-
-Si los scripts no funcionan, abre una terminal dentro de la carpeta del proyecto y ejecuta:
+### Opción B — Comandos manuales
 
 ```bash
+# Desde la carpeta CodigoFuente/Frontend/
 npm install
 npm run dev
 ```
 
-Luego abre **http://localhost:5173** en tu navegador.
+Abrir en el navegador: **http://localhost:5173**
 
----
+### Verificar que funciona
 
-## 🔗 Paso 3 — Backend requerido
+Al abrir la aplicación con el backend activo se debe ver:
 
-Este frontend se comunica con un servidor **Spring Boot** en:
 ```
-http://localhost:8080
+✅ Página de inicio con tres tarjetas: Dueños | Mascotas | Citas
+✅ Módulo Dueños: registrar, editar, eliminar y buscar
+✅ Módulo Mascotas: registrar, editar, eliminar y buscar
+✅ Módulo Citas: agendar, editar, cambiar estado y eliminar
 ```
 
-> ⚠️ El backend debe estar corriendo **antes** de usar la aplicación.  
-> Si las tablas aparecen vacías, verifica que el servidor Spring Boot esté activo.
+---
+
+## Módulos de la aplicación
+
+### 🏠 Inicio (`/`)
+Dashboard con tres tarjetas de acceso rápido a cada módulo. Muestra un banner con el nombre del sistema.
+
+### 🧑 Dueños (`/duenos`)
+| Funcionalidad | Descripción |
+|---|---|
+| Registrar dueño | Formulario con nombre, apellido, documento, teléfono, email y dirección |
+| Editar dueño | Carga los datos en el formulario al presionar "Editar" |
+| Eliminar dueño | Confirmación con `window.confirm` antes de eliminar |
+| Buscar dueño | Búsqueda por nombre, apellido o número de documento |
+
+> Al eliminar un dueño se eliminan en cascada sus mascotas y citas (manejado por el backend con `CascadeType.ALL`).
+
+### 🐶 Mascotas (`/mascotas`)
+| Funcionalidad | Descripción |
+|---|---|
+| Registrar mascota | Nombre, especie (select), raza, fecha de nacimiento y dueño asociado |
+| Editar mascota | Precarga todos los campos incluyendo el dueño del select |
+| Eliminar mascota | Confirmación antes de eliminar |
+| Buscar mascota | Búsqueda por nombre de mascota, nombre del dueño o documento del dueño |
+| Edad calculada | La columna "Edad" muestra el valor calculado automáticamente por el backend |
+
+### 📅 Citas (`/citas`)
+| Funcionalidad | Descripción |
+|---|---|
+| Agendar cita | Selección de mascota (con su dueño), fecha, hora y motivo |
+| Editar cita | Permite cambiar datos y actualizar el estado (PROGRAMADA / COMPLETADA / CANCELADA) |
+| Eliminar cita | Confirmación antes de eliminar |
+| Badge de estado | Color azul (PROGRAMADA), verde (COMPLETADA), rojo (CANCELADA) |
 
 ---
 
-## ✅ ¿Qué debería ver?
+## Validaciones implementadas
 
-Al abrir **http://localhost:5173** con el backend activo verás:
+Las validaciones ocurren en **dos capas**: frontend (antes de enviar) y backend (Spring Validation).
 
-- **Página de inicio** con tres tarjetas: Dueños, Mascotas, Citas
-- **Módulo Dueños** — registrar, editar, eliminar y buscar propietarios
-- **Módulo Mascotas** — registrar, editar, eliminar y buscar pacientes
-- **Módulo Citas** — agendar, editar y cancelar citas veterinarias
+### Validaciones en el frontend
 
----
+| Regla | Componente | Descripción |
+|---|---|---|
+| Campos obligatorios vacíos | Todos los formularios | `alert()` si hay campos requeridos en blanco |
+| No citas en fechas pasadas | `CitaForm.jsx` | Compara la fecha seleccionada con `new Date()` |
+| No completar citas futuras | `CitaForm.jsx` | Deshabilita la opción COMPLETADA si `fechaHora > ahora` |
+| Fecha mínima en input | `CitaForm.jsx` | Atributo `min={getTodayDate()}` en el `<input type="date">` |
+| Fecha máxima nacimiento | `MascotaForm.jsx` | Atributo `max={new Date().toISOString().split('T')[0]}` |
 
-## ❓ Problemas comunes
+### Validaciones en el backend (Spring)
 
-**El navegador no se abre solo**  
-→ Escribe manualmente en tu navegador: `http://localhost:5173`
-
-**Error "Puerto 5173 en uso"**  
-→ Ya hay una instancia corriendo. Abre directamente `http://localhost:5173` en tu navegador, o reinicia el equipo e intenta de nuevo.
-
-**Error al instalar dependencias (npm install)**  
-→ Verifica tu conexión a internet e intenta de nuevo.
-
-**Las tablas aparecen vacías o hay errores**  
-→ El backend (Spring Boot en puerto 8080) no está corriendo. Levántalo primero.
-
-**Windows bloquea el script .bat**  
-→ Clic derecho sobre `start.bat` → **"Ejecutar como administrador"**
-
-**Mac dice que no puede abrir start.sh**  
-→ Abre Terminal, navega a la carpeta del proyecto y ejecuta: `chmod +x start.sh && ./start.sh`
+El backend retorna errores en formato JSON `{ "success": false, "error": "..." }` que el frontend captura con `error.response?.data?.error` y muestra en la alerta de la página.
 
 ---
 
-*Prueba técnica — AHK Colombia 2026*
+## Diseño responsive y accesibilidad
+
+### Responsive
+
+La interfaz se adapta a tres tamaños de pantalla:
+
+| Breakpoint | Cambios |
+|---|---|
+| Desktop (> 768px) | Navegación horizontal, formularios en grilla de 2 columnas, tablas completas |
+| Tablet (≤ 768px) | Menú hamburguesa, formularios en 1 columna, búsqueda vertical |
+| Móvil (≤ 480px) | Tipografía reducida, padding compacto, acciones en columna |
+
+Para verificar el diseño responsive durante la defensa: presionar **F12** en el navegador → ícono de dispositivo móvil, o reducir el ancho de la ventana.
+
+### Accesibilidad
+
+- `*:focus-visible` con `outline` visible para navegación con teclado
+- Colores con contraste suficiente (azul `#2E86AB` sobre blanco)
+- Botones con estado `disabled` con `opacity: 0.6` y `cursor: not-allowed`
+- Etiquetas `<label>` asociadas a cada input del formulario
+- Indicadores visuales de campos obligatorios con `*` en rojo
+
+---
+
+## Conexión con el backend
+
+Toda la comunicación HTTP está centralizada en `src/services/api.js`:
+
+```javascript
+// Instancia base de Axios
+const api = axios.create({
+    baseURL: 'http://localhost:8080/api',
+    headers: { 'Content-Type': 'application/json' }
+});
+```
+
+Los servicios expuestos son:
+
+| Servicio | Métodos disponibles |
+|---|---|
+| `duenoService` | `getAll`, `getById`, `create`, `update`, `delete`, `search` |
+| `mascotaService` | `getAll`, `getById`, `create`, `update`, `delete`, `search`, `getByDueno` |
+| `citaService` | `getAll`, `getById`, `create`, `update`, `delete`, `getByMascota` |
+
+### Solución de problemas comunes
+
+| Problema | Causa | Solución |
+|---|---|---|
+| Tablas vacías / errores en consola | Backend no está corriendo | Iniciar Spring Boot primero (`mvnw spring-boot:run`) |
+| Puerto 5173 ya en uso | Otra instancia corriendo | Abrir directamente `http://localhost:5173` o reiniciar el equipo |
+| El navegador no abre solo | Vite tardó en iniciar | Escribir manualmente `http://localhost:5173` |
+| `npm install` falla | Sin conexión a internet | Verificar red e intentar de nuevo |
+| Windows bloquea `start.bat` | Política de seguridad | Clic derecho → "Ejecutar como administrador" |
+
+---
+
+## Autor
+
+Desarrollado como Test Práctico Final de Certificación — AHK Colombia / CESDE  
+Contacto evaluador: andres.valencia@ahk-colombia.com
